@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "updated_at": "2026-08-14T13:52:01Z",
+  "plugins": [
+    {
+      "id": "java_support",
+      "name": "Java Support",
+      "version": "1.0.0",
+      "author": "未知作者",
+      "description": "java_support 插件，版本 1.0.0",
+      "package_url": "https://raw.githubusercontent.com/L-YLing/Thon-Market/main/packages/java_support-1.0.0.zip",
+      "package_sha256": "1f0ba6c5bdf1664f8e604b6a6c45039d9fcaff144feed978ad0d0848b42d22c8",
+      "host_version": ">=0.5.0",
+      "requires": []
+    }
+  ]
+}

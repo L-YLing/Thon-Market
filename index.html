@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thon Code 插件市场</title>
+<style>
+:root {
+    --bg: #ffffff;
+    --card-bg: #f8fafc;
+    --text: #1e293b;
+    --text-dim: #64748b;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent-light: #3b82f6;
+    --shadow: 0 2px 12px rgba(0,0,0.06);
+}
+.dark {
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --border: #334155;
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    transition: background 0.3s, color 0.3s;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+.theme-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.theme-btn:hover {
+    border-color: var(--accent);
+}
+.search-box {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+#search {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.2s;
+}
+#search:focus {
+    border-color: var(--accent);
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, border-color 0.2s;
+    padding: 1.25rem;
+}
+.card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent-light);
+}
+.card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.6rem;
+}
+.card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+.version-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: var(--border);
+    color: var(--text-dim);
+}
+.desc {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin: 0.8rem 0 1rem;
+    line-height: 1.5;
+}
+.meta {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+}
+.download-btn {
+    display: inline-block;
+    text-decoration: none;
+    padding: 0.6rem 1.2rem;
+    background: var(--accent);
+    color: white;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+.download-btn:hover {
+    opacity: 0.85;
+}
+.empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 0;
+    color: var(--text-dim);
+    font-size: 1rem;
+}
+footer {
+    margin-top: 4rem;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Thon Code 插件市场</h1>
+        <button class="theme-btn" id="toggleTheme">切换明暗模式</button>
+    </header>
+    <div class="search-box">
+        <input id="search" placeholder="搜索插件名称、ID、描述..." type="text">
+    </div>
+    <div class="grid" id="pluginGrid"></div>
+    <footer>
+        <p>数据更新时间：<span id="updateTime"></span></p>
+        <p>插件包存放于主分支 packages/ 目录，页面托管在 gh-pages</p>
+    </footer>
+</div>
+<script>
+// 明暗模式
+const html = document.documentElement;
+const toggleBtn = document.getElementById('toggleTheme');
+function initTheme() {
+    const saved = localStorage.getItem('market-theme');
+    if (saved === 'dark') html.classList.add('dark');
+}
+toggleBtn.addEventListener('click', () => {
+    html.classList.toggle('dark');
+    const isDark = html.classList.contains('dark');
+    localStorage.setItem('market-theme', isDark ? 'dark' : 'light');
+});
+initTheme();
+// HTML转义
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+}
+// 渲染插件列表
+let allPlugins = [];
+const grid = document.getElementById('pluginGrid');
+const searchInput = document.getElementById('search');
+const timeSpan = document.getElementById('updateTime');
+function render(list) {
+    if (!list.length) {
+        grid.innerHTML = '<div class="empty">未匹配到任何插件</div>';
+        return;
+    }
+    grid.innerHTML = list.map(p => `
+        <div class="card">
+            <div class="card-head">
+                <h3 class="card-title">${escapeHtml(p.name)}</h3>
+                <span class="version-tag">v${escapeHtml(p.version)}</span>
+            </div>
+            <div class="meta">ID: ${escapeHtml(p.id)}</div>
+            <p class="desc">${escapeHtml(p.description || '暂无描述')}</p>
+            <a class="download-btn" href="${escapeHtml(p.package_url)}" target="_blank">下载 ZIP 包</a>
+        </div>
+    `).join('');
+}
+// 搜索过滤
+function filterPlugins(keyword) {
+    const kw = keyword.toLowerCase().trim();
+    if (!kw) return allPlugins;
+    return allPlugins.filter(p =>
+        p.id.toLowerCase().includes(kw) ||
+        p.name.toLowerCase().includes(kw) ||
+        (p.description && p.description.toLowerCase().includes(kw))
+    );
+}
+searchInput.addEventListener('input', e => {
+    render(filterPlugins(e.target.value));
+});
+// 加载索引
+fetch('index.json')
+    .then(r => r.json())
+    .then(data => {
+        allPlugins = data.plugins || [];
+        timeSpan.textContent = data.updated_at || '未知';
+        render(allPlugins);
+    })
+    .catch(err => {
+        grid.innerHTML = `<div class="empty">加载索引失败: ${escapeHtml(err.message)}</div>`;
+    });
+</script>
+</body>
+</html>
